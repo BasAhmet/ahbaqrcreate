@@ -45,32 +45,29 @@ function changeForm() {
     document.getElementById('formContainer').innerHTML = forms[type];
 }
 
-// qr-code-styling kütüphanesini başlat
+// qr-code-styling kütüphanesini başlat (Başlangıç renkleri HTML'deki varsayılanlarla aynı)
 const qrCode = new QRCodeStyling({
     width: 300,
     height: 300,
     margin: 20,
-    type: "canvas", // <-- SVG yerine Canvas yapıldı (Kilitlenmeyi önler)
+    type: "canvas", 
     data: "https://ornek.com",
     image: "",
     dotsOptions: {
         type: "rounded",
-        // Çift Renk (Gradient) Ayarı: Kırmızıdan Maviye
         gradient: {
             type: "linear",
-            rotation: Math.PI / 2, // Pi/2 = Yukarıdan aşağıya dik geçiş
+            rotation: Math.PI / 2,
             colorStops: [
-                { offset: 0, color: "#ff0000" }, // 0% noktasında Kırmızı
-                { offset: 1, color: "#0000ff" }  // 100% noktasında Mavi
+                { offset: 0, color: "#ff0000" }, // Üst Renk
+                { offset: 1, color: "#0000ff" }  // Alt Renk
             ]
         }
     },
-    // Köşelerdeki Dış Çerçeveler (Siyah)
     cornersSquareOptions: {
         color: "#000000",
         type: "square"
     },
-    // Köşelerdeki İç Noktalar (Siyah)
     cornersDotOptions: {
         color: "#000000",
         type: "square"
@@ -124,17 +121,20 @@ function generateQR() {
         return;
     }
 
+    // Seçilen renkleri HTML'den çekiyoruz
+    const color1 = document.getElementById('gradColor1').value;
+    const color2 = document.getElementById('gradColor2').value;
+
     qrCode.update({
         data: data,
         image: currentLogo || "",
         dotsOptions: {
-            // HTML'deki renk seçiciyi geçersiz kılıp, kırmızı-mavi geçişini zorluyoruz
             gradient: {
                 type: "linear",
                 rotation: Math.PI / 2,
                 colorStops: [
-                    { offset: 0, color: "#ff0000" },
-                    { offset: 1, color: "#0000ff" }
+                    { offset: 0, color: color1 }, // Kullanıcının seçtiği Renk 1
+                    { offset: 1, color: color2 }  // Kullanıcının seçtiği Renk 2
                 ]
             }
         },
