@@ -132,7 +132,7 @@
             image: "",
             dotsOptions: {
                 color: "#000000",
-                type: "rounded" // Kareleri hafif yuvarlatılmış yapar
+                type: "rounded"
             },
             backgroundOptions: {
                 color: "#ffffff",
@@ -156,7 +156,7 @@
                 const ssid = document.getElementById('wifiSsid').value;
                 const pass = document.getElementById('wifiPass').value;
                 const enc = document.getElementById('wifiType').value;
-                return \`WIFI:S:\${ssid};T:\${enc};P:\${pass};;\`;
+                return `WIFI:S:${ssid};T:${enc};P:${pass};;`;
             }
             
             if (type === 'vcard') {
@@ -164,14 +164,14 @@
                 const phone = document.getElementById('vcPhone').value;
                 const email = document.getElementById('vcEmail').value;
                 const company = document.getElementById('vcCompany').value;
-                return \`BEGIN:VCARD\\nVERSION:3.0\\nN:\${name}\\nTEL:\${phone}\\nEMAIL:\${email}\\nORG:\${company}\\nEND:VCARD\`;
+                return `BEGIN:VCARD\nVERSION:3.0\nN:${name}\nTEL:${phone}\nEMAIL:${email}\nORG:${company}\nEND:VCARD`;
             }
 
             if (type === 'email') {
                 const to = document.getElementById('emAddress').value;
                 const sub = document.getElementById('emSubject').value;
                 const body = document.getElementById('emBody').value;
-                return \`mailto:\${to}?subject=\${encodeURIComponent(sub)}&body=\${encodeURIComponent(body)}\`;
+                return `mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
             }
         }
 
