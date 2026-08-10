@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gelişmiş QR Kod Oluşturucu</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QR Code Styling Kütüphanesi -->
+    <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-4xl w-full bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- Sol Taraf: Ayarlar ve Formlar -->
+        <div class="space-y-6">
+            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">QR Kod Ayarları</h2>
+            
+            <!-- 1. Veri Türü Seçimi -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Veri Türü</label>
+                <select id="dataType" onchange="changeForm()" class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="text">URL / Metin</option>
+                    <option value="wifi">Wi-Fi Bağlantısı</option>
+                    <option value="vcard">vCard (Kartvizit)</option>
+                    <option value="email">E-Posta</option>
+                </select>
+            </div>
+
+            <!-- Dinamik Form Alanı -->
+            <div id="formContainer" class="space-y-3 bg-gray-50 p-4 rounded-md border border-gray-200">
+                <!-- JavaScript ile doldurulacak -->
+            </div>
+
+            <!-- 2. Tasarım Özelleştirme -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-800">Tasarım & Logo</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Kare Rengi</label>
+                        <input type="color" id="qrColor" value="#000000" class="w-full h-10 rounded cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Arka Plan</label>
+                        <input type="color" id="bgColor" value="#ffffff" class="w-full h-10 rounded cursor-pointer">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Logo Yükle (İsteğe Bağlı)</label>
+                    <input type="file" id="logoInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+            </div>
+
+            <button onclick="generateQR()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors">
+                QR Kod Üret
+            </button>
+        </div>
+
+        <!-- Sağ Taraf: Önizleme ve İndirme -->
+        <div class="flex flex-col items-center justify-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Önizleme</h3>
+            
+            <!-- QR Kod Buraya Çizilecek -->
+            <div id="canvas" class="mb-6 bg-white p-2 shadow-sm rounded-lg"></div>
+
+            <!-- 3. İndirme Butonları -->
+            <div class="flex gap-2 w-full max-w-xs">
+                <button onclick="downloadQR('png')" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-md font-medium transition-colors">PNG İndir</button>
+                <button onclick="downloadQR('svg')" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-md font-medium transition-colors">SVG İndir</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Form şablonları
+        const forms = {
+            text: `<input type="text" id="textData" placeholder="https:// veya metin girin" class="w-full border p-2 rounded">`,
+            wifi: `
+                <input type="text" id="wifiSsid" placeholder="Ağ Adı (SSID)" class="w-full border p-2 rounded mb-2">
+                <input type="text" id="wifiPass" placeholder="Şifre" class="w-full border p-2 rounded mb-2">
+                <select id="wifiType" class="w-full border p-2 rounded">
+                    <option value="WPA">WPA/WPA2</option>
+                    <option value="WEP">WEP</option>
+                    <option value="nopass">Şifresiz</option>
+                </select>`,
+            vcard: `
+                <input type="text" id="vcName" placeholder="Ad Soyad" class="w-full border p-2 rounded mb-2">
+                <input type="text" id="vcPhone" placeholder="Telefon Numarası" class="w-full border p-2 rounded mb-2">
+                <input type="email" id="vcEmail" placeholder="E-Posta" class="w-full border p-2 rounded mb-2">
+                <input type="text" id="vcCompany" placeholder="Şirket/Kurum" class="w-full border p-2 rounded">`,
+            email: `
+                <input type="email" id="emAddress" placeholder="Alıcı E-Posta" class="w-full border p-2 rounded mb-2">
+                <input type="text" id="emSubject" placeholder="Konu" class="w-full border p-2 rounded mb-2">
+                <textarea id="emBody" placeholder="Mesajınız" class="w-full border p-2 rounded h-20"></textarea>`
+        };
+
+        // Sayfa yüklendiğinde varsayılan formu getir
+        document.getElementById('formContainer').innerHTML = forms.text;
+
+        let currentLogo = null;
+
+        // Logo yükleme işlemi
+        document.getElementById('logoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentLogo = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                currentLogo = null;
+            }
+        });
+
+        // Veri türü değiştiğinde formu güncelle
+        function changeForm() {
+            const type = document.getElementById('dataType').value;
+            document.getElementById('formContainer').innerHTML = forms[type];
+        }
+
+        // qr-code-styling kütüphanesini başlat (Varsayılan ayarlar)
+        const qrCode = new QRCodeStyling({
+            width: 300,
+            height: 300,
+            type: "svg",
+            data: "https://ornek.com",
+            image: "",
+            dotsOptions: {
+                color: "#000000",
+                type: "rounded" // Kareleri hafif yuvarlatılmış yapar
+            },
+            backgroundOptions: {
+                color: "#ffffff",
+            },
+            imageOptions: {
+                crossOrigin: "anonymous",
+                margin: 10
+            }
+        });
+
+        // İlk QR kodu ekrana çiz
+        qrCode.append(document.getElementById("canvas"));
+
+        // Formatlayıcılar: Girdiği veriyi QR formatına çevirir
+        function getFormattedData() {
+            const type = document.getElementById('dataType').value;
+            
+            if (type === 'text') return document.getElementById('textData').value;
+            
+            if (type === 'wifi') {
+                const ssid = document.getElementById('wifiSsid').value;
+                const pass = document.getElementById('wifiPass').value;
+                const enc = document.getElementById('wifiType').value;
+                return \`WIFI:S:\${ssid};T:\${enc};P:\${pass};;\`;
+            }
+            
+            if (type === 'vcard') {
+                const name = document.getElementById('vcName').value;
+                const phone = document.getElementById('vcPhone').value;
+                const email = document.getElementById('vcEmail').value;
+                const company = document.getElementById('vcCompany').value;
+                return \`BEGIN:VCARD\\nVERSION:3.0\\nN:\${name}\\nTEL:\${phone}\\nEMAIL:\${email}\\nORG:\${company}\\nEND:VCARD\`;
+            }
+
+            if (type === 'email') {
+                const to = document.getElementById('emAddress').value;
+                const sub = document.getElementById('emSubject').value;
+                const body = document.getElementById('emBody').value;
+                return \`mailto:\${to}?subject=\${encodeURIComponent(sub)}&body=\${encodeURIComponent(body)}\`;
+            }
+        }
+
+        // QR Kodu güncelle
+        function generateQR() {
+            const data = getFormattedData();
+            if (!data || data.trim() === "") {
+                alert("Lütfen geçerli bir veri girin.");
+                return;
+            }
+
+            qrCode.update({
+                data: data,
+                image: currentLogo || "",
+                dotsOptions: {
+                    color: document.getElementById('qrColor').value
+                },
+                backgroundOptions: {
+                    color: document.getElementById('bgColor').value
+                }
+            });
+        }
+
+        // İndirme işlemi
+        function downloadQR(extension) {
+            qrCode.download({ name: "qr-kod", extension: extension });
+        }
+    </script>
+</body>
+</html>
